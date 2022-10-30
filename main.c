@@ -4,6 +4,7 @@
  * - preconditioned BiCGStab
  * - GMRES (generalized minimum residual)
  * - GMRES with left and right preconditioning
+ * - CGNR
  *------------------------------------------------------------------------
  *
  * Copyright (c) 2020-2022 Harbin Institute of Technology. All rights reserved.
