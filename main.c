@@ -24,14 +24,10 @@ void solve_cg(int n, double *x, double *b, op_t Aop, int niter, double tol);
 void solve_pcg(int n, double *x, double *b, op_t Aop, op_t invMop, int niter, double tol);
 //linear solver using BiCGStab
 void solve_bicgstab(int n, double *x, double *b, op_t Aop, int niter, double tol);
-//linear solver using preconditioned BiCGStab
-void solve_pbicgstab(int n, double *x, double *b, op_t Aop, op_t invPop, int niter, double tol);
-//preconditioned BiCGStab2
-void solve_pbicgstab2(int n, double *x, double *b, op_t Aop, op_t invMop, int niter, double tol);
+//linear solver using right preconditioned BiCGStab
+void solve_bicgstab_rightpreco(int n, double *x, double *b, op_t Aop, op_t invPop, int niter, double tol);
 //GMRES without preconditioning
 void solve_gmres(int n, double *x, double *b, op_t Aop, int niter, double tol, int m);
-//GMRES with left preconditioning
-void solve_gmres_leftpreco(int n, double *x, double *b, op_t Aop, op_t invMop, int niter, double tol, int m);
 //GMRES with right preconditioning
 void solve_gmres_rightpreco(int n, double *x, double *b, op_t Aop, op_t invMop, int niter, double tol, int m);
 void solve_cgnr(int n, double *x, double *b, op_t Aop, op_t Atop, int niter, double tol);
@@ -58,13 +54,13 @@ void coo2csr();
 void csr2csc();
 
 //solve Py=p, solution: y=invP*p
-void invP_apply(int n, double *p, double *y)
+void Id_apply(int n, double *p, double *y)
 {
   memcpy(y, p, n*sizeof(double));//choose K=I, so y=p
 }
 
 //problem 1: 1D signal reconstruction example
-int main(int argc, char **argv)
+int main1(int argc, char **argv)
 {
   int n, niter, method, m;
   int i, j;
@@ -104,14 +100,12 @@ int main(int argc, char **argv)
   else if(method==2)
     solve_bicgstab(n, x, b, A_apply, niter, tol);
   else if(method==3)
-    solve_pbicgstab(n, x, b, A_apply, invP_apply, niter, tol);
+    solve_bicgstab_rightpreco(n, x, b, A_apply, Id_apply, niter, tol);
   else if(method==4)
     solve_gmres(n, x, b, A_apply, niter, tol, m);
   else if(method==5)
-    solve_gmres_leftpreco(n, x, b, A_apply, invP_apply, niter, tol, m);
+    solve_gmres_rightpreco(n, x, b, A_apply, Id_apply, niter, tol, m);
   else if(method==6)
-    solve_gmres_rightpreco(n, x, b, A_apply, invP_apply, niter, tol, m);
-  else if(method==7)
     solve_cgnr(n, x, b, A_apply, At_apply, niter, tol);
 
   
@@ -130,7 +124,7 @@ int main(int argc, char **argv)
 
 
 //problem 2: possion equation \Delta u = f.
-int main2(int argc, char **argv)
+int main(int argc, char **argv)
 {
   int nx, ny, n, m, niter, method, i, j, k;
   double dx, dy, tol;
@@ -173,13 +167,11 @@ int main2(int argc, char **argv)
   else if(method==2)
     solve_bicgstab(n, x, b, Acsr_apply, niter, tol);
   else if(method==3)
-    solve_pbicgstab(n, x, b, Acsr_apply, invP_apply, niter, tol);
+    solve_bicgstab_rightpreco(n, x, b, Acsr_apply, Id_apply, niter, tol);
   else if(method==4)
     solve_gmres(n, x, b, Acsr_apply, niter, tol, m);
   else if(method==5)
-    solve_gmres_leftpreco(n, x, b, Acsr_apply, invP_apply, niter, tol, m);
-  else if(method==6)
-    solve_gmres_rightpreco(n, x, b, Acsr_apply, invP_apply, niter, tol, m);
+    solve_gmres_rightpreco(n, x, b, Acsr_apply, Id_apply, niter, tol, m);
   
   /* output true signal and reconstructed one */
   fp= fopen("result.txt", "w");

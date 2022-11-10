@@ -122,8 +122,127 @@ void solve_pcg(int n, double *x, double *b, op_t Aop, op_t invMop, int niter, do
   free1double(z);
 }
 
-//linear solver using BiCGStab
+//linear solver using BiCGStab, algorithm 7.7 in Saad book
 void solve_bicgstab(int n, double *x, double *b, op_t Aop, int niter, double tol)
+{
+  int i, k;
+  double rs0, rs, rho_old, rho_new, alpha, beta, omega;
+
+  double *r = alloc1double(n);
+  double *r0 = alloc1double(n);//rprime0
+  double *p = alloc1double(n);
+  double *v = alloc1double(n);
+  double *s = alloc1double(n);
+  double *t = alloc1double(n);
+  
+  Aop(n, x, v);//v=Ax
+  for(i=0; i<n; i++) {
+    r[i] = b[i]-v[i];//r=b-Ax
+    p[i] = r[i];
+    r0[i] = r[i];
+  }
+  rho_old = dotprod(n, r0, r);
+  rs = dotprod(n, r, r);
+  rs0 = rs;
+  
+  for(k=0; k<niter; k++){
+    printf("k=%d rs=%e\n", k, rs);
+
+    Aop(n, p, v);//v=Ap
+    alpha = rho_old/dotprod(n, r0, v);
+    for(i=0; i<n; i++) s[i] = r[i] - alpha*v[i];
+
+    Aop(n, s, t);//t=As
+    omega = dotprod(n, t, s)/dotprod(n, t, t);
+
+    for(i=0; i<n; i++){
+      x[i] += alpha*p[i] + omega*s[i];
+      r[i] = s[i] - omega*t[i];
+    }
+    rs = dotprod(n, r, r);
+    if(rs<tol*rs0) {
+      printf("converged at k=%d\n", k);
+      break;
+    }
+
+    rho_new = dotprod(n, r0, r);
+    beta = (rho_new/rho_old)*alpha/omega;
+    for(i=0; i<n; i++) p[i] = r[i] + beta*(p[i]-omega*v[i]);
+
+    rho_old = rho_new;
+  }
+
+  free1double(r);
+  free1double(r0);
+  free1double(p);
+  free1double(v);
+  free1double(s);
+  free1double(t);
+}
+
+//Reference: Jie Chen, 2016 JSC, Right preconditioned/Flexible BiCGStab paper
+void solve_bicgstab_rightpreco(int n, double *x, double *b, op_t Aop, op_t invMop, int niter, double tol)
+{
+  int i, k;
+  double rs0, rs, rho_old, rho_new, alpha, beta, omega;
+
+  double *r = alloc1double(n);
+  double *r0 = alloc1double(n);//rprime0
+  double *p = alloc1double(n);
+  double *q = alloc1double(n);
+  double *v = alloc1double(n);
+  double *s = alloc1double(n);
+  double *t = alloc1double(n);
+  
+  Aop(n, x, v);//v=Ax
+  for(i=0; i<n; i++) {
+    r[i] = b[i]-v[i];//r=b-Ax
+    p[i] = r[i];
+    r0[i] = r[i];
+  }
+  rho_old = dotprod(n, r0, r);
+  rs = dotprod(n, r, r);
+  rs0 = rs;
+  
+  for(k=0; k<niter; k++){
+    printf("k=%d rs=%e\n", k, rs);
+
+    invMop(n, p, q);//q=invM*p
+    Aop(n, q, v);//v=Aq
+    alpha = rho_old/dotprod(n, r0, v);
+    for(i=0; i<n; i++) s[i] = r[i] - alpha*v[i];
+
+    invMop(n, s, r);//r=invM*s
+    Aop(n, r, t);//t=Ar
+    omega = dotprod(n, t, s)/dotprod(n, t, t);
+
+    for(i=0; i<n; i++){
+      x[i] += alpha*p[i] + omega*s[i];
+      r[i] = s[i] - omega*t[i];
+    }
+    rs = dotprod(n, r, r);
+    if(rs<tol*rs0) {
+      printf("converged at k=%d\n", k);
+      break;
+    }
+
+    rho_new = dotprod(n, r0, r);
+    beta = (rho_new/rho_old)*alpha/omega;
+    for(i=0; i<n; i++) p[i] = r[i] + beta*(p[i]-omega*v[i]);
+
+    rho_old = rho_new;
+  }
+
+  free1double(r);
+  free1double(r0);
+  free1double(p);
+  free1double(v);
+  free1double(s);
+  free1double(t);
+}
+
+//linear solver using BiCGStab
+void solve_bicgstab0(int n, double *x, double *b, op_t Aop, int niter, double tol)
 {
   int i, k;
   double rs0, rs, rho_old, rho_new, alpha, beta, omega;
@@ -183,7 +302,7 @@ void solve_bicgstab(int n, double *x, double *b, op_t Aop, int niter, double tol
 }
 
 //linear solver using preconditioned BiCGStab
-void solve_pbicgstab(int n, double *x, double *b, op_t Aop, op_t invKop, int niter, double tol)
+void solve_pbicgstab1(int n, double *x, double *b, op_t Aop, op_t invKop, int niter, double tol)
 {
   int i, k;
   double rs0, rs, rho_old, rho_new, alpha, beta;
