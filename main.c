@@ -1,9 +1,10 @@
 /* Demo for linear optimization algorithms with/without preconditioning
- * - conjugate gradient method
+ * - conjugate gradient (CG) method
+ * - preconditioned CG
  * - BiCGStab (Bi-conjugate gradient with stabalization)
- * - preconditioned BiCGStab
+ * - BiCGStab with right preconditioning
  * - GMRES (generalized minimum residual)
- * - GMRES with left and right preconditioning
+ * - GMRES with right preconditioning
  * - CGNR
  *------------------------------------------------------------------------
  *
