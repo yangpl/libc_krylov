@@ -82,7 +82,6 @@ int main1(int argc, char **argv)
   xt = alloc1double(n);
   b = alloc1double(n);
 
-
   dt = 1./n;
   omegas[0] = 2.*PI*0.5;
   omegas[1] = 2.*PI*2.1;

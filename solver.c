@@ -16,7 +16,7 @@
 #include "solver.h"
 
 //compute dot product s=<x,y>
-double dotprod(int n, double *a, double *b)
+double ddotprod(int n, double *a, double *b)
 {
   int i;
   double s;
@@ -40,7 +40,7 @@ void solve_cg(int n, double *x, double *b, op_t Aop, int niter, double tol)
     r[i] = b[i]-Ap[i];//r=b-Ax
     p[i] = r[i];
   }
-  rsold = dotprod(n, r, r);
+  rsold = ddotprod(n, r, r);
   rs0 = rsold;
   if(rsold<1e-15) return;//residual small enough, exit
 
@@ -48,14 +48,14 @@ void solve_cg(int n, double *x, double *b, op_t Aop, int niter, double tol)
     printf("k=%d rs=%e\n", k, rsold);
 
     Aop(n, p, Ap);//Ap=A*p
-    pAp = dotprod(n, p, Ap);
+    pAp = ddotprod(n, p, Ap);
     alp = rsold/pAp;
 
     for(i=0; i<n; i++){
       x[i] += alp*p[i];
       r[i] -= alp*Ap[i];
     }
-    rsnew = dotprod(n, r, r);
+    rsnew = ddotprod(n, r, r);
     if(rsnew<tol*rs0) {
       printf("converged at k=%d\n", k);
       break;
@@ -86,8 +86,8 @@ void solve_pcg(int n, double *x, double *b, op_t Aop, op_t invMop, int niter, do
   for(i=0; i<n; i++) r[i] = b[i]-Ap[i];//r=b-Ax
   invMop(n, r, z);
   memcpy(p, z, n*sizeof(double));
-  rzold = dotprod(n, r, z);
-  rs = dotprod(n, r, r);
+  rzold = ddotprod(n, r, z);
+  rs = ddotprod(n, r, r);
   rs = sqrt(rs);
   rs0 = rs;
 
@@ -95,7 +95,7 @@ void solve_pcg(int n, double *x, double *b, op_t Aop, op_t invMop, int niter, do
     printf("k=%d rs=%e\n", k, rs);
 
     Aop(n, p, Ap);//Ap=A*p
-    pAp = dotprod(n, p, Ap);
+    pAp = ddotprod(n, p, Ap);
     alp = rzold/pAp;
 
     for(i=0; i<n; i++){
@@ -103,8 +103,8 @@ void solve_pcg(int n, double *x, double *b, op_t Aop, op_t invMop, int niter, do
       r[i] -= alp*Ap[i];
     }
     invMop(n, r, z);
-    rznew = dotprod(n, r, z);
-    rs = dotprod(n, r, r);
+    rznew = ddotprod(n, r, z);
+    rs = ddotprod(n, r, r);
     rs = sqrt(rs);
     if(rs<tol*rs0) {
       printf("converged at k=%d\n", k);
@@ -141,31 +141,31 @@ void solve_bicgstab(int n, double *x, double *b, op_t Aop, int niter, double tol
     p[i] = r[i];
     r0[i] = r[i];
   }
-  rho_old = dotprod(n, r0, r);
-  rs = dotprod(n, r, r);
+  rho_old = ddotprod(n, r0, r);
+  rs = ddotprod(n, r, r);
   rs0 = rs;
   
   for(k=0; k<niter; k++){
     printf("k=%d rs=%e\n", k, rs);
 
     Aop(n, p, v);//v=Ap
-    alpha = rho_old/dotprod(n, r0, v);
+    alpha = rho_old/ddotprod(n, r0, v);
     for(i=0; i<n; i++) s[i] = r[i] - alpha*v[i];
 
     Aop(n, s, t);//t=As
-    omega = dotprod(n, t, s)/dotprod(n, t, t);
+    omega = ddotprod(n, t, s)/ddotprod(n, t, t);
 
     for(i=0; i<n; i++){
       x[i] += alpha*p[i] + omega*s[i];
       r[i] = s[i] - omega*t[i];
     }
-    rs = dotprod(n, r, r);
+    rs = ddotprod(n, r, r);
     if(rs<tol*rs0) {
       printf("converged at k=%d\n", k);
       break;
     }
 
-    rho_new = dotprod(n, r0, r);
+    rho_new = ddotprod(n, r0, r);
     beta = (rho_new/rho_old)*alpha/omega;
     for(i=0; i<n; i++) p[i] = r[i] + beta*(p[i]-omega*v[i]);
 
@@ -200,8 +200,8 @@ void solve_bicgstab_rightpreco(int n, double *x, double *b, op_t Aop, op_t invMo
     p[i] = r[i];
     r0[i] = r[i];
   }
-  rho_old = dotprod(n, r0, r);
-  rs = dotprod(n, r, r);
+  rho_old = ddotprod(n, r0, r);
+  rs = ddotprod(n, r, r);
   rs0 = rs;
   
   for(k=0; k<niter; k++){
@@ -209,24 +209,24 @@ void solve_bicgstab_rightpreco(int n, double *x, double *b, op_t Aop, op_t invMo
 
     invMop(n, p, q);//q=invM*p
     Aop(n, q, v);//v=Aq
-    alpha = rho_old/dotprod(n, r0, v);
+    alpha = rho_old/ddotprod(n, r0, v);
     for(i=0; i<n; i++) s[i] = r[i] - alpha*v[i];
 
     invMop(n, s, r);//r=invM*s
     Aop(n, r, t);//t=Ar
-    omega = dotprod(n, t, s)/dotprod(n, t, t);
+    omega = ddotprod(n, t, s)/ddotprod(n, t, t);
 
     for(i=0; i<n; i++){
       x[i] += alpha*p[i] + omega*s[i];
       r[i] = s[i] - omega*t[i];
     }
-    rs = dotprod(n, r, r);
+    rs = ddotprod(n, r, r);
     if(rs<tol*rs0) {
       printf("converged at k=%d\n", k);
       break;
     }
 
-    rho_new = dotprod(n, r0, r);
+    rho_new = ddotprod(n, r0, r);
     beta = (rho_new/rho_old)*alpha/omega;
     for(i=0; i<n; i++) p[i] = r[i] + beta*(p[i]-omega*v[i]);
 
@@ -264,28 +264,28 @@ void solve_bicgstab0(int n, double *x, double *b, op_t Aop, int niter, double to
   omega = 1.;
   memset(p, 0, n*sizeof(double));
   memset(v, 0, n*sizeof(double));
-  rs = dotprod(n, r, r);
+  rs = ddotprod(n, r, r);
   rs0 = rs;
   
   for(k=0; k<niter; k++){
     printf("k=%d rs=%e\n", k, rs);
 
-    rho_new = dotprod(n, r0, r);
+    rho_new = ddotprod(n, r0, r);
     beta = (rho_new/rho_old)*alpha/omega;
     for(i=0; i<n; i++) p[i] = r[i] + beta*(p[i]-omega*v[i]);
 
     Aop(n, p, v);
-    alpha = rho_new/dotprod(n, r0, v);
+    alpha = rho_new/ddotprod(n, r0, v);
     for(i=0; i<n; i++) s[i] = r[i] - alpha*v[i];
 
     Aop(n, s, t);
-    omega = dotprod(n, t, s)/dotprod(n, t, t);
+    omega = ddotprod(n, t, s)/ddotprod(n, t, t);
 
     for(i=0; i<n; i++){
       x[i] += alpha*p[i] + omega*s[i];
       r[i] = s[i] - omega*t[i];
     }
-    rs = dotprod(n, r, r);
+    rs = ddotprod(n, r, r);
     if(rs<tol*rs0) {
       printf("converged at k=%d\n", k);
       break;
@@ -323,13 +323,13 @@ void solve_pbicgstab1(int n, double *x, double *b, op_t Aop, op_t invKop, int ni
   rho_old = 1.;
   memset(p, 0, n*sizeof(double));
   memset(q, 0, n*sizeof(double));
-  rs = dotprod(n, r, r);
+  rs = ddotprod(n, r, r);
   rs0 = rs;
   
   for(k=0; k<niter; k++){
     printf("k=%d rs=%e\n", k, rs);
 
-    rho_new = dotprod(n, r0, r);
+    rho_new = ddotprod(n, r0, r);
     beta = rho_new/rho_old;
     for(i=0; i<n; i++) {
       u[i] = r[i] + beta*q[i];
@@ -339,7 +339,7 @@ void solve_pbicgstab1(int n, double *x, double *b, op_t Aop, op_t invKop, int ni
     invKop(n, p, y);//solve Ky=p, invert K such that y=K^{-1}p
     
     Aop(n, y, v);//v=Ay
-    alpha = rho_new/dotprod(n, r0, v);
+    alpha = rho_new/ddotprod(n, r0, v);
     for(i=0; i<n; i++) {
       q[i] = u[i] - alpha*v[i];
       u[i] += q[i];//reuse u to store u+q
@@ -352,7 +352,7 @@ void solve_pbicgstab1(int n, double *x, double *b, op_t Aop, op_t invKop, int ni
       x[i] += alpha*y[i];
       r[i] -= alpha*v[i];
     }
-    rs = dotprod(n, r, r);
+    rs = ddotprod(n, r, r);
     if(rs<tol*rs0) {
       printf("converged at k=%d\n", k);
       break;
@@ -390,7 +390,7 @@ void solve_pbicgstab2(int n, double *x, double *b, op_t Aop, op_t invMop, int ni
     p[i] = r[i];
   }
   rho_old = 1.;
-  rs = dotprod(n, r, r);
+  rs = ddotprod(n, r, r);
   rs0 = rs;
   
   for(k=0; k<niter; k++){
@@ -398,15 +398,15 @@ void solve_pbicgstab2(int n, double *x, double *b, op_t Aop, op_t invMop, int ni
 
     invMop(n, p, q);
     Aop(n, q, v);
-    rho_new = dotprod(n, r0, r);
-    alpha = rho_new/dotprod(n, r0, v);
+    rho_new = ddotprod(n, r0, r);
+    alpha = rho_new/ddotprod(n, r0, v);
     for(i=0; i<n; i++) {
       x[i] = x[i] + alpha*p[i];
       s[i] = r[i] - alpha*v[i];
     }
     invMop(n, s, q);
     Aop(n, q, w);
-    gamma = dotprod(n, w, s)/dotprod(n, w, w);
+    gamma = ddotprod(n, w, s)/ddotprod(n, w, w);
 
     for(i=0; i<n; i++) {
       x[i] = x[i] + gamma*q[i];
@@ -421,7 +421,7 @@ void solve_pbicgstab2(int n, double *x, double *b, op_t Aop, op_t invMop, int ni
     
     Aop(n, x, v);//v=Az
     for(i=0; i<n; i++) w[i] = b[i] - v[i];
-    rs = dotprod(n, w, w);
+    rs = ddotprod(n, w, w);
     if(sqrt(rs)<tol*sqrt(rs0)) {
       printf("converged at k=%d\n", k);
       break;
@@ -457,7 +457,7 @@ void solve_gmres(int n, double *x, double *b, op_t Aop, int niter, double tol, i
     /*---------------------------------------------------*/
     Aop(n, x, w);//w=A*x
     for(i=0; i<n; i++) r[i] = b[i] -w[i];
-    beta = sqrt(dotprod(n, r, r));
+    beta = sqrt(ddotprod(n, r, r));
     if(iter==0) r0 = beta;
     if(beta<tol*r0) return;
     for(i=0; i<n; i++) v[0][i] = r[i]/beta;
@@ -469,10 +469,10 @@ void solve_gmres(int n, double *x, double *b, op_t Aop, int niter, double tol, i
     for(j=0; j<m; j++){
       Aop(n, v[j], w);//r=Av;
       for(i=0; i<=j; i++) {
-	h[i][j] = dotprod(n, v[i], w);
+	h[i][j] = ddotprod(n, v[i], w);
 	for(k=0; k<n; k++) w[k] -= h[i][j]*v[i][k];
       }
-      h[j+1][j] = sqrt(dotprod(n, w, w));
+      h[j+1][j] = sqrt(ddotprod(n, w, w));
 
       if(h[j+1][j]<eps) { m=j+1; break; }
       for(i=0; i<n; i++) v[j+1][i] = w[i]/h[j+1][j];
@@ -559,7 +559,7 @@ void solve_gmres_leftpreco(int n, double *x, double *b, op_t Aop, op_t invMop, i
     Aop(n, x, r);//r=A*x
     for(i=0; i<n; i++) w[i] = b[i] -r[i];
     invMop(n, w, r);//r=invM*(b-Ax)
-    beta = sqrt(dotprod(n, r, r));
+    beta = sqrt(ddotprod(n, r, r));
     if(iter==0) r0 = beta;
     if(beta<tol*r0) return;
     for(i=0; i<n; i++) v[0][i] = r[i]/beta;
@@ -572,10 +572,10 @@ void solve_gmres_leftpreco(int n, double *x, double *b, op_t Aop, op_t invMop, i
       Aop(n, v[j], r);//r=Av;
       invMop(n, r, w);//w=invM*Av;
       for(i=0; i<=j; i++) {
-	h[i][j] = dotprod(n, v[i], w);
+	h[i][j] = ddotprod(n, v[i], w);
 	for(k=0; k<n; k++) w[k] -= h[i][j]*v[i][k];
       }
-      h[j+1][j] = sqrt(dotprod(n, w, w));
+      h[j+1][j] = sqrt(ddotprod(n, w, w));
 
       if(h[j+1][j]<eps) { m=j+1; break; }
       for(i=0; i<n; i++) v[j+1][i] = w[i]/h[j+1][j];
@@ -662,7 +662,7 @@ void solve_gmres_rightpreco(int n, double *x, double *b, op_t Aop, op_t invMop, 
     /*---------------------------------------------------*/
     Aop(n, x, w);//w=A*x
     for(i=0; i<n; i++) r[i] = b[i]-w[i];
-    beta = sqrt(dotprod(n, r, r));
+    beta = sqrt(ddotprod(n, r, r));
     if(iter==0) r0 = beta;
     if(beta<tol*r0) return;
     for(i=0; i<n; i++) v[0][i] = r[i]/beta;
@@ -675,10 +675,10 @@ void solve_gmres_rightpreco(int n, double *x, double *b, op_t Aop, op_t invMop, 
       invMop(n, v[j], r);//r=invM*v
       Aop(n, r, w);//w=Ar;
       for(i=0; i<=j; i++) {
-	h[i][j] = dotprod(n, v[i], w);
+	h[i][j] = ddotprod(n, v[i], w);
 	for(k=0; k<n; k++) w[k] -= h[i][j]*v[i][k];
       }
-      h[j+1][j] = sqrt(dotprod(n, w, w));
+      h[j+1][j] = sqrt(ddotprod(n, w, w));
 
       if(h[j+1][j]<eps) { m=j+1; break; }
       for(i=0; i<n; i++) v[j+1][i] = w[i]/h[j+1][j];
@@ -762,23 +762,23 @@ void solve_cgnr(int n, double *x, double *b, op_t Aop, op_t Atop, int niter, dou
   for(i=0; i<n; i++) r[i] = b[i] - w[i];
   Atop(n, r, z);//z=At*r
   for(i=0; i<n; i++) p[i] = z[i];
-  zsold = dotprod(n, z, z);
+  zsold = ddotprod(n, z, z);
 
   for(iter=0; iter<niter; iter++){
-    rs = dotprod(n, r, r);
+    rs = ddotprod(n, r, r);
     printf("iter=%d cgnr rs=%e\n", iter, rs);
     if(iter==0) rs0 = rs;
     if(rs<tol*rs0) break;
     
     Aop(n, p, w);//w=Ap
-    ws = dotprod(n, w, w);
+    ws = ddotprod(n, w, w);
     alpha = zsold/ws;
     for(i=0; i<n; i++) {
       x[i] += alpha*p[i];
       r[i] -= alpha*w[i];
     }
     Atop(n, r, z);
-    zsnew = dotprod(n, z, z);
+    zsnew = ddotprod(n, z, z);
     beta = zsnew/zsold;
     for(i=0; i<n; i++) p[i] = z[i] + beta*p[i];
     zsold = zsnew;
