@@ -746,7 +746,7 @@ void solve_gmres_rightpreco(int n, double *x, double *b, op_t Aop, op_t invMop, 
   free1double(s);
 }
 
-//CGNR method
+//CGNR method, algorithm 8.4 Saad book, chapter 8.3
 void solve_cgnr(int n, double *x, double *b, op_t Aop, op_t Atop, int niter, double tol)
 {
   int i, iter;
